@@ -1,0 +1,37 @@
+using AdvancedProductionTraining.Web.Data;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace AdvancedProductionTraining.Tests.Integration;
+
+public sealed class TrainingWebApplicationFactory : WebApplicationFactory<Program>
+{
+    private SqliteConnection? _connection;
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseEnvironment("Testing");
+
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll(typeof(DbContextOptions<OrdersDbContext>));
+            services.RemoveAll(typeof(OrdersDbContext));
+
+            _connection = new SqliteConnection("DataSource=:memory:");
+            _connection.Open();
+
+            services.AddDbContext<OrdersDbContext>(options =>
+                options.UseSqlite(_connection));
+        });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        _connection?.Dispose();
+    }
+}
